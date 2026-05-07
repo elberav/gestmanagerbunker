@@ -6,8 +6,8 @@
 
 | Sistema | Archivo | Requisitos |
 |---------|---------|-------------|
-| Windows | [⬇️ ManagAccount-v1.0.exe](https://github.com/elberav/gestmanagerbunker/releases/download/dsoejecutables/ManagAccount-v1.2.exe) | Windows 10/11 (WebView2) - Portable|
-| Linux | [⬇️ ManagAccount-v1.0](https://github.com/elberav/gestmanagerbunker/releases/download/dsoejecutables/ManagAccount-v1.2) | Cualquier distro Linux - Portable|
+| Windows | [⬇️ ManagAccount-v1.2.exe](https://github.com/elberav/gestmanagerbunker/releases/download/dsoejecutables/ManagAccount-v1.2.exe) | Windows 10/11 (WebView2) - Portable|
+| Linux | [⬇️ ManagAccount-v1.2](https://github.com/elberav/gestmanagerbunker/releases/download/dsoejecutables/ManagAccount-v1.2) | Cualquier distro Linux - Portable|
 
 ---
 
