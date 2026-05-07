@@ -30,9 +30,9 @@
 
 🔐 Seguridad
 Cifrado: AES-256-GCM
-Derivación de clave: PBKDF2 (600,000 iteraciones)
+Derivación de clave: Llave binaria usando Argon2id
 Recuperación: Código de emergencia (28 caracteres)
-Almacenamiento: SQLite local (cuenta_service_v1.db)
+Almacenamiento: SQLite local - offline
 
 🌐 Idiomas
 Español
