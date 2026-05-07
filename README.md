@@ -23,10 +23,10 @@
 1. Descarga `gestor-cuentas`
 2. Dale permisos de ejecución:
    ```bash
-   chmod +x gestor-cuentas
+   chmod +x ManagAccount-v1.2
 3. Ejecuta:
    ```bash
-   ./gestor-cuentas
+   ./ManagAccount-v1.2
 
 🔐 Seguridad
 Cifrado: AES-256-GCM
