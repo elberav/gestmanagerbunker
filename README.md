@@ -1,4 +1,4 @@
-![image](https://raw.githubusercontent.com/elberav/gestmanagerbunker/refs/heads/main/build/example.jpeg)
+![image](https://raw.githubusercontent.com/elberav/gestmanagerbunker/refs/heads/master/build/example.jpeg)
 # GestorCuentas - Gestor de Contraseñas
 
 **Gestor de contraseñas seguro** con cifrado AES-256-GCM y clave maestra.
