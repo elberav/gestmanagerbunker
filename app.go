@@ -173,14 +173,14 @@ func (a *App) Call_CheckEmergencyConfig() bool {
 func (a *App) Call_UploadFile(accountID *int, filename string, base64Data string, tag string, comment string) string {
 	rawBytes, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
-		return err.Error()
+		return "Error al decodificar el archivo"
 	}
 	if len(rawBytes) > 5*1024*1024 { // Límite de 5MB
 		return "El archivo excede el límite de 5MB"
 	}
 	encBytes, err := backend.EncryptBytes(rawBytes)
 	if err != nil {
-		return err.Error()
+		return "Error al cifrar el archivo"
 	}
 	backend.AddSecureFile(accountID, filename, len(rawBytes), encBytes, tag, comment)
 	return "" // Todo bien
@@ -228,7 +228,7 @@ func (a *App) Call_SaveFileToDisk(fileID int) string {
 	for i := range rawBytes { rawBytes[i] = 0 }
 
 	if err != nil {
-		return "Error al escribir el archivo en disco: " + err.Error()
+		return "Error al escribir el archivo en disco"
 	}
 
 	return "SUCCESS"

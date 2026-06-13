@@ -5,16 +5,24 @@ package backend
 import (
 	"os"
 	"strings"
+	"syscall"
 )
 
 // isBeingDebugged detecta si hay un debugger (ptrace) activo en Linux.
 func isBeingDebugged() bool {
 	status, err := os.ReadFile("/proc/self/status")
-	if err != nil {
-		return false
+	if err == nil {
+		if !strings.Contains(string(status), "TracerPid:\t0") {
+			return true
+		}
 	}
-	// Si TracerPid es distinto de 0, hay un debugger enganchado.
-	return !strings.Contains(string(status), "TracerPid:\t0")
+
+	// Si nos pueden hacer ptrace, probablemente hay un debugger
+	if err := syscall.PtraceTraceme(); err != nil {
+		return true
+	}
+
+	return false
 }
 
 // HideFile no hace nada en Linux porque el punto al inicio del nombre ya lo oculta.

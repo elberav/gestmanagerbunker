@@ -5,11 +5,9 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -33,37 +31,25 @@ var (
 	saltFile     = filepath.Join(secretsDir, SaltFileName)
 	verifyFile   = filepath.Join(secretsDir, VerifyFileName)
 	recoveryFile = filepath.Join(secretsDir, RecoveryFileName)
-	lockoutFile  = filepath.Join(secretsDir, ".lockout")
 
 	masterKey []byte
 	salt      []byte
 
-	// Rate limiting: 4 intentos, 5 minutos de bloqueo (Persistente)
+	// Rate limiting: 4 intentos, 5 minutos de bloqueo (Persistente en BD)
 	failedAttempts int
 	lockoutUntil   time.Time
 )
 
-// loadLockoutState lee el estado de bloqueo desde el disco
+// loadLockoutState lee el estado de bloqueo desde la BD
 func loadLockoutState() {
-	data, err := os.ReadFile(lockoutFile)
-	if err != nil {
-		return
-	}
-	// Formato simple: "intentos|timestamp"
-	parts := strings.Split(string(data), "|")
-	if len(parts) == 2 {
-		fmt.Sscanf(parts[0], "%d", &failedAttempts)
-		var ts int64
-		fmt.Sscanf(parts[1], "%d", &ts)
-		lockoutUntil = time.Unix(ts, 0)
-	}
+	attempts, until := getLockoutFromDB()
+	failedAttempts = attempts
+	lockoutUntil = until
 }
 
-// saveLockoutState guarda el estado de bloqueo en el disco
+// saveLockoutState guarda el estado de bloqueo en la BD
 func saveLockoutState() {
-	content := fmt.Sprintf("%d|%d", failedAttempts, lockoutUntil.Unix())
-	os.WriteFile(lockoutFile, []byte(content), 0600)
-	HideFile(lockoutFile)
+	setLockoutInDB(failedAttempts, lockoutUntil)
 }
 
 // GetLockoutStatus devuelve los intentos fallidos y los segundos restantes de bloqueo.
@@ -218,7 +204,10 @@ func Unlock(password string) bool {
 		return true
 	}
 
-	// Si falló, incrementar contador
+	// Si falló, limpiar tempKey de la heap antes de salir
+	for i := range tempKey {
+		tempKey[i] = 0
+	}
 	failedAttempts++
 	if failedAttempts >= 4 {
 		lockoutUntil = time.Now().Add(5 * time.Minute)
@@ -299,6 +288,7 @@ func RecoverWithCode(code, newPassword string) (string, error) {
 	recoveryKey := DeriveKey(code, recSalt)
 	oldMasterKeyStr, err := decryptData(recoveryKey, encKey)
 	if err != nil {
+		for i := range recoveryKey { recoveryKey[i] = 0 }
 		failedAttempts++
 		if failedAttempts >= 4 {
 			lockoutUntil = time.Now().Add(5 * time.Minute)
@@ -307,18 +297,23 @@ func RecoverWithCode(code, newPassword string) (string, error) {
 		return "", errors.New("código de recuperación incorrecto")
 	}
 	oldMasterKey := []byte(oldMasterKeyStr)
+	for i := range oldMasterKeyStr { oldMasterKeyStr[i] = 0 }
+	for i := range recoveryKey { recoveryKey[i] = 0 }
 
 	// Derivar nueva masterKey
 	newSalt := make([]byte, saltSize)
 	if _, err := io.ReadFull(rand.Reader, newSalt); err != nil {
+		for i := range oldMasterKey { oldMasterKey[i] = 0 }
 		return "", err
 	}
 	newMasterKey := DeriveKey(string(newPwBytes), newSalt)
 
 	// Re-encriptar TODA la data de la BD (passwords, notas y metadata)
 	if err := ReEncryptAllData(oldMasterKey, newMasterKey); err != nil {
+		for i := range oldMasterKey { oldMasterKey[i] = 0 }
 		return "", err
 	}
+	for i := range oldMasterKey { oldMasterKey[i] = 0 }
 
 	// Actualizar globales
 	masterKey = newMasterKey
@@ -367,12 +362,15 @@ func ChangeMasterPassword(currentPassword, newPassword string) (string, error) {
 	testKey := DeriveKey(string(curPwBytes), currentSalt)
 	tokenRaw, err := os.ReadFile(verifyFile)
 	if err != nil {
+		for i := range testKey { testKey[i] = 0 }
 		return "", errors.New("error al leer token de verificación")
 	}
 	decrypted, err := decryptData(testKey, tokenRaw)
 	if err != nil || string(decrypted) != verifyPhrase {
+		for i := range testKey { testKey[i] = 0 }
 		return "", errors.New("contraseña actual incorrecta")
 	}
+	for i := range testKey { testKey[i] = 0 }
 
 	oldMasterKey := make([]byte, len(masterKey))
 	copy(oldMasterKey, masterKey)
@@ -384,9 +382,11 @@ func ChangeMasterPassword(currentPassword, newPassword string) (string, error) {
 	newMasterKey := DeriveKey(newPassword, newSalt)
 
 	if err := ReEncryptAllData(oldMasterKey, newMasterKey); err != nil {
+		for i := range oldMasterKey { oldMasterKey[i] = 0 }
 		return "", err
 	}
 
+	for i := range oldMasterKey { oldMasterKey[i] = 0 }
 	masterKey = newMasterKey
 	salt = newSalt
 

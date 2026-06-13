@@ -2,10 +2,12 @@ package backend
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -100,6 +102,16 @@ func initDB() {
 		log.Fatal("Error crítico creando tabla accounts:", err)
 	}
 
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS vault_metadata (
+			key   TEXT PRIMARY KEY,
+			value TEXT NOT NULL DEFAULT ''
+		)
+	`)
+	if err != nil {
+		log.Fatal("Error crítico creando tabla vault_metadata:", err)
+	}
+
 	var version int
 	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		log.Fatal("Error leyendo PRAGMA user_version:", err)
@@ -147,6 +159,52 @@ func initDB() {
 		db.Exec("PRAGMA user_version = 4")
 		version = 4
 	}
+	if version < 5 {
+		log.Println("[Migración] Actualizando BD a v5 (lockout en BD)...")
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS vault_metadata (
+				key   TEXT PRIMARY KEY,
+				value TEXT NOT NULL DEFAULT ''
+			)
+		`)
+		if err != nil {
+			log.Fatal("Error creando vault_metadata:", err)
+		}
+		// Valores por defecto
+		db.Exec("INSERT OR IGNORE INTO vault_metadata (key, value) VALUES ('failed_attempts', '0')")
+		db.Exec("INSERT OR IGNORE INTO vault_metadata (key, value) VALUES ('lockout_until', '0')")
+		db.Exec("PRAGMA user_version = 5")
+		version = 5
+	}
+}
+
+func getLockoutFromDB() (int, time.Time) {
+	if db == nil {
+		return 0, time.Time{}
+	}
+	var attempts int
+	err := db.QueryRow("SELECT CAST(value AS INTEGER) FROM vault_metadata WHERE key='failed_attempts'").Scan(&attempts)
+	if err != nil {
+		return 0, time.Time{}
+	}
+	var untilUnix int64
+	err = db.QueryRow("SELECT CAST(value AS INTEGER) FROM vault_metadata WHERE key='lockout_until'").Scan(&untilUnix)
+	if err != nil {
+		return attempts, time.Time{}
+	}
+	return attempts, time.Unix(untilUnix, 0)
+}
+
+func setLockoutInDB(attempts int, until time.Time) {
+	if db == nil {
+		return
+	}
+	var untilUnix int64
+	if !until.IsZero() {
+		untilUnix = until.Unix()
+	}
+	db.Exec("INSERT OR REPLACE INTO vault_metadata (key, value) VALUES ('failed_attempts', ?)", fmt.Sprintf("%d", attempts))
+	db.Exec("INSERT OR REPLACE INTO vault_metadata (key, value) VALUES ('lockout_until', ?)", fmt.Sprintf("%d", untilUnix))
 }
 
 func MigrateEncryptFields() {
