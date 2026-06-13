@@ -123,7 +123,9 @@ export const translations = {
     btnExport: "Exportar",
     exportSuccess: "Cuentas exportadas correctamente",
     updateAvailable: "Nueva versión {version} disponible",
-    btnDownload: "Descargar",
+    btnUpdateNow: "Actualizar",
+    updateDownloading: "Descargando nueva versión...",
+    updateApplying: "Instalando y reiniciando...",
   },
   en: {
     appTitle: "Account Registry Pro",
@@ -247,7 +249,9 @@ export const translations = {
     btnExport: "Export",
     exportSuccess: "Accounts exported successfully",
     updateAvailable: "New version {version} available",
-    btnDownload: "Download",
+    btnUpdateNow: "Update",
+    updateDownloading: "Downloading new version...",
+    updateApplying: "Installing and restarting...",
   }
 };
 

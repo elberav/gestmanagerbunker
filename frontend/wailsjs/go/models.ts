@@ -73,6 +73,7 @@ export namespace main {
 	    has_update: boolean;
 	    latest_version: string;
 	    download_url: string;
+	    asset_name: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateInfo(source);
@@ -83,6 +84,7 @@ export namespace main {
 	        this.has_update = source["has_update"];
 	        this.latest_version = source["latest_version"];
 	        this.download_url = source["download_url"];
+	        this.asset_name = source["asset_name"];
 	    }
 	}
 

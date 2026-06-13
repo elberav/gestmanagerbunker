@@ -5,6 +5,8 @@ import {backend} from '../models';
 
 export function Call_AddAccount(arg1:string,arg2:string,arg3:string,arg4:string,arg5:any,arg6:string,arg7:string,arg8:string,arg9:string):Promise<number>;
 
+export function Call_ApplyUpdate():Promise<string>;
+
 export function Call_ChangeMasterPassword(arg1:string,arg2:string):Promise<string>;
 
 export function Call_CheckEmergencyConfig():Promise<boolean>;
@@ -20,6 +22,8 @@ export function Call_DeletePermanently(arg1:number):Promise<void>;
 export function Call_DeleteSecureFile(arg1:number):Promise<void>;
 
 export function Call_DownloadFile(arg1:number):Promise<Array<string>>;
+
+export function Call_DownloadUpdate(arg1:string):Promise<string>;
 
 export function Call_ExportAccounts():Promise<string>;
 

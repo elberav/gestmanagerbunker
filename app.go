@@ -9,6 +9,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
+	goruntime "runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,6 +26,7 @@ type UpdateInfo struct {
 	HasUpdate     bool   `json:"has_update"`
 	LatestVersion string `json:"latest_version"`
 	DownloadURL   string `json:"download_url"`
+	AssetName     string `json:"asset_name"`
 }
 
 type App struct {
@@ -345,6 +349,10 @@ func (a *App) Call_CheckUpdate() UpdateInfo {
 	var ghResp struct {
 		TagName string `json:"tag_name"`
 		HTMLURL string `json:"html_url"`
+		Assets  []struct {
+			Name               string `json:"name"`
+			BrowserDownloadURL string `json:"browser_download_url"`
+		} `json:"assets"`
 	}
 	if json.Unmarshal(body, &ghResp) != nil || ghResp.TagName == "" {
 		return UpdateInfo{}
@@ -356,11 +364,36 @@ func (a *App) Call_CheckUpdate() UpdateInfo {
 		DownloadURL:   ghResp.HTMLURL,
 	}
 
+	if info.HasUpdate {
+		downloadURL, assetName := findOSAsset(ghResp.Assets)
+		if downloadURL != "" {
+			info.DownloadURL = downloadURL
+			info.AssetName = assetName
+		}
+	}
+
 	a.updateMu.Lock()
 	a.updateCache = &info
 	a.updateMu.Unlock()
 
 	return info
+}
+
+func findOSAsset(assets []struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}) (string, string) {
+	goos := goruntime.GOOS
+	for _, asset := range assets {
+		name := strings.ToLower(asset.Name)
+		if goos == "windows" && strings.HasSuffix(name, ".exe") {
+			return asset.BrowserDownloadURL, asset.Name
+		}
+		if goos == "linux" && !strings.HasSuffix(name, ".exe") && !strings.HasSuffix(name, ".msi") {
+			return asset.BrowserDownloadURL, asset.Name
+		}
+	}
+	return "", ""
 }
 
 // compareSemver returns 1 if a > b, -1 if a < b, 0 if equal
@@ -387,6 +420,100 @@ func parseVersion(v string) [3]int {
 		res[i] = n
 	}
 	return res
+}
+
+func (a *App) Call_DownloadUpdate(url string) string {
+	if url == "" {
+		return "URL de descarga no disponible"
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		return "No se pudo determinar la ruta del ejecutable"
+	}
+	exeDir := filepath.Dir(exePath)
+	newPath := filepath.Join(exeDir, "GestorCuentas_new")
+	if goruntime.GOOS == "windows" {
+		newPath += ".exe"
+	}
+
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Get(url)
+	if err != nil {
+		return "Error al descargar: " + err.Error()
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "Error del servidor: " + resp.Status
+	}
+
+	out, err := os.Create(newPath)
+	if err != nil {
+		return "Error al crear archivo: " + err.Error()
+	}
+	defer out.Close()
+
+	written, err := io.Copy(out, resp.Body)
+	if err != nil {
+		os.Remove(newPath)
+		return "Error al escribir archivo: " + err.Error()
+	}
+
+	if written < 1024*1024 {
+		os.Remove(newPath)
+		return "Archivo demasiado pequeno, posible error de descarga"
+	}
+
+	return "SUCCESS"
+}
+
+func (a *App) Call_ApplyUpdate() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		return "No se pudo determinar la ruta del ejecutable"
+	}
+	exeDir := filepath.Dir(exePath)
+	newPath := filepath.Join(exeDir, "GestorCuentas_new")
+	origPath := exePath
+
+	if goruntime.GOOS == "windows" {
+		newPath += ".exe"
+		batPath := filepath.Join(exeDir, "update.bat")
+		batContent := fmt.Sprintf(
+			"@echo off\r\n"+
+				"timeout /t 2 /nobreak >nul\r\n"+
+				"copy /y \"%s\" \"%s\" >nul\r\n"+
+				"del \"%s\"\r\n"+
+				"start \"\" \"%s\"\r\n",
+			newPath, origPath, newPath, origPath,
+		)
+		if err := os.WriteFile(batPath, []byte(batContent), 0644); err != nil {
+			return "Error al crear script de actualizacion"
+		}
+		cmd := exec.Command("cmd", "/c", batPath)
+		cmd.Start()
+	} else {
+		shPath := filepath.Join(exeDir, "update.sh")
+		shContent := fmt.Sprintf(
+			"#!/bin/bash\n"+
+				"sleep 2\n"+
+				"cp \"%s\" \"%s\"\n"+
+				"rm \"%s\"\n"+
+				"\"%s\" &\n",
+			newPath, origPath, newPath, origPath,
+		)
+		if err := os.WriteFile(shPath, []byte(shContent), 0755); err != nil {
+			return "Error al crear script de actualizacion"
+		}
+		cmd := exec.Command("bash", shPath)
+		cmd.Start()
+	}
+
+	backend.Lock()
+	backend.CloseDB()
+	os.Exit(0)
+	return ""
 }
 
 func (a *App) Call_ExportAccounts() string {

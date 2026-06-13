@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts, Call_CheckUpdate } from '../wailsjs/go/main/App.js';
+  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts, Call_CheckUpdate, Call_DownloadUpdate, Call_ApplyUpdate } from '../wailsjs/go/main/App.js';
   import AccountNode from './AccountNode.svelte';
   import LoginOverlay from './LoginOverlay.svelte';
   import AccountForm from './AccountForm.svelte';
@@ -35,8 +35,31 @@
   let exportToast = "";
   let updateInfo = null;
   let updateDismissed = false;
+  let updateState = ""; // "", "downloading", "applying", "error"
+  let updateError = "";
   let inactivityTimer;
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutos en milisegundos
+
+  async function handleUpdate() {
+    if (!updateInfo) return;
+    updateState = "downloading";
+    updateError = "";
+    try {
+      const dlResult = await Call_DownloadUpdate(updateInfo.download_url);
+      if (dlResult !== "SUCCESS") {
+        updateState = "error";
+        updateError = dlResult;
+        return;
+      }
+      updateState = "applying";
+      setTimeout(() => {
+        Call_ApplyUpdate();
+      }, 500);
+    } catch (e) {
+      updateState = "error";
+      updateError = e.toString();
+    }
+  }
 
   async function checkForUpdate() {
     try {
@@ -284,14 +307,33 @@
       </div>
     </div>
 
-    {#if updateInfo && !updateDismissed}
+    {#if updateInfo && !updateDismissed && !updateState}
       <div class="update-banner">
         <span>{$t('updateAvailable').replace('{version}', updateInfo.latest_version)}</span>
-        <a href={updateInfo.download_url} target="_blank" rel="noopener" class="update-link">{$t('btnDownload')}</a>
+        <button class="update-link" on:click={handleUpdate}>{$t('btnUpdateNow')}</button>
         <button class="update-dismiss" on:click={() => updateDismissed = true}>✕</button>
       </div>
     {/if}
 
+    {#if updateState === "downloading"}
+      <div class="update-banner downloading">
+        <span>{$t('updateDownloading')}</span>
+        <div class="update-spinner"></div>
+      </div>
+    {/if}
+
+    {#if updateState === "applying"}
+      <div class="update-banner applying">
+        <span>{$t('updateApplying')}</span>
+      </div>
+    {/if}
+
+    {#if updateState === "error"}
+      <div class="update-banner error">
+        <span>✗ {updateError}</span>
+        <button class="update-dismiss" on:click={() => { updateState = ''; updateError = ''; }}>✕</button>
+      </div>
+    {/if}
     {#if loading}
       <div class="loader">{$t('loadingDB')}</div>
     {:else if accounts.length === 0}
@@ -581,18 +623,40 @@
     color: #93c5fd;
     animation: toastIn 0.3s ease-out;
   }
+  .update-banner.downloading {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #422006, #2a1a00);
+    color: #fbbf24;
+  }
+  .update-banner.applying {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, #052e16, #0a1f0a);
+    color: #4ade80;
+  }
+  .update-banner.error {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #3b0505, #2a0000);
+    color: #f87171;
+  }
   .update-link {
-    color: #60a5fa;
+    background: #3b82f6;
+    color: #fff;
     font-weight: 700;
-    text-decoration: none;
-    padding: 4px 12px;
+    border: none;
+    padding: 6px 16px;
     border-radius: 6px;
-    border: 1px solid #3b82f6;
+    cursor: pointer;
+    font-size: 13px;
     transition: all 0.2s;
   }
   .update-link:hover {
-    background: #3b82f6;
-    color: #fff;
+    background: #2563eb;
+    transform: translateY(-1px);
+  }
+  .update-link:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
   .update-dismiss {
     background: transparent;
@@ -608,6 +672,17 @@
   .update-dismiss:hover {
     background: rgba(255,255,255,0.1);
     color: #e2e8f0;
+  }
+  .update-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(251,191,36,0.3);
+    border-top-color: #fbbf24;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .export-toast {

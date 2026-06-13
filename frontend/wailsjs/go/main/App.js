@@ -6,6 +6,10 @@ export function Call_AddAccount(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, 
   return window['go']['main']['App']['Call_AddAccount'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
 
+export function Call_ApplyUpdate() {
+  return window['go']['main']['App']['Call_ApplyUpdate']();
+}
+
 export function Call_ChangeMasterPassword(arg1, arg2) {
   return window['go']['main']['App']['Call_ChangeMasterPassword'](arg1, arg2);
 }
@@ -36,6 +40,10 @@ export function Call_DeleteSecureFile(arg1) {
 
 export function Call_DownloadFile(arg1) {
   return window['go']['main']['App']['Call_DownloadFile'](arg1);
+}
+
+export function Call_DownloadUpdate(arg1) {
+  return window['go']['main']['App']['Call_DownloadUpdate'](arg1);
 }
 
 export function Call_ExportAccounts() {
