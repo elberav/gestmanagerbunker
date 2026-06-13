@@ -67,3 +67,24 @@ export namespace backend {
 
 }
 
+export namespace main {
+	
+	export class UpdateInfo {
+	    has_update: boolean;
+	    latest_version: string;
+	    download_url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.has_update = source["has_update"];
+	        this.latest_version = source["latest_version"];
+	        this.download_url = source["download_url"];
+	    }
+	}
+
+}
+

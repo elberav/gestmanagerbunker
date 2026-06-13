@@ -14,6 +14,10 @@ export function Call_CheckEmergencyConfig() {
   return window['go']['main']['App']['Call_CheckEmergencyConfig']();
 }
 
+export function Call_CheckUpdate() {
+  return window['go']['main']['App']['Call_CheckUpdate']();
+}
+
 export function Call_CopyToClipboard(arg1) {
   return window['go']['main']['App']['Call_CopyToClipboard'](arg1);
 }

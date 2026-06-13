@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts } from '../wailsjs/go/main/App.js';
+  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts, Call_CheckUpdate } from '../wailsjs/go/main/App.js';
   import AccountNode from './AccountNode.svelte';
   import LoginOverlay from './LoginOverlay.svelte';
   import AccountForm from './AccountForm.svelte';
@@ -33,8 +33,21 @@
   let cpCodeCopied = false;
 
   let exportToast = "";
+  let updateInfo = null;
+  let updateDismissed = false;
   let inactivityTimer;
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutos en milisegundos
+
+  async function checkForUpdate() {
+    try {
+      const info = await Call_CheckUpdate();
+      if (info && info.has_update) {
+        updateInfo = info;
+      }
+    } catch (e) {
+      // Silencio — sin internet no es critico
+    }
+  }
 
   async function handleExport() {
     const result = await Call_ExportAccounts();
@@ -161,7 +174,7 @@
 </script>
 
 {#if !isUnlocked}
-  <LoginOverlay on:unlocked={() => { isUnlocked = true; loadAccounts(); resetInactivityTimer(); }} />
+  <LoginOverlay on:unlocked={() => { isUnlocked = true; loadAccounts(); resetInactivityTimer(); checkForUpdate(); }} />
 {/if}
 
 {#if showAddForm}
@@ -270,6 +283,14 @@
         {/if}
       </div>
     </div>
+
+    {#if updateInfo && !updateDismissed}
+      <div class="update-banner">
+        <span>{$t('updateAvailable').replace('{version}', updateInfo.latest_version)}</span>
+        <a href={updateInfo.download_url} target="_blank" rel="noopener" class="update-link">{$t('btnDownload')}</a>
+        <button class="update-dismiss" on:click={() => updateDismissed = true}>✕</button>
+      </div>
+    {/if}
 
     {#if loading}
       <div class="loader">{$t('loadingDB')}</div>
@@ -545,6 +566,48 @@
     border-color: #3b82f6; 
     color: #e2e8f0; 
     background: rgba(59,130,246,0.1);
+  }
+
+  .update-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #1e3a5f, #1a2a4a);
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 8px 16px 0;
+    font-size: 13px;
+    color: #93c5fd;
+    animation: toastIn 0.3s ease-out;
+  }
+  .update-link {
+    color: #60a5fa;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid #3b82f6;
+    transition: all 0.2s;
+  }
+  .update-link:hover {
+    background: #3b82f6;
+    color: #fff;
+  }
+  .update-dismiss {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: auto;
+    transition: all 0.2s;
+  }
+  .update-dismiss:hover {
+    background: rgba(255,255,255,0.1);
+    color: #e2e8f0;
   }
 
   .export-toast {

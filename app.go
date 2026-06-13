@@ -4,8 +4,12 @@ import (
 	"GestorCuentas/backend"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,11 +17,22 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+const AppVersion = "v1.0.0"
+
+type UpdateInfo struct {
+	HasUpdate     bool   `json:"has_update"`
+	LatestVersion string `json:"latest_version"`
+	DownloadURL   string `json:"download_url"`
+}
+
 type App struct {
 	ctx context.Context
 
 	clipMu     sync.Mutex
 	clipCancel context.CancelFunc
+
+	updateMu    sync.Mutex
+	updateCache *UpdateInfo
 }
 
 func NewApp() *App {
@@ -297,6 +312,81 @@ func (a *App) Call_Decrypt(payload []byte) (string, error) {
 		return "", backend.ErrLocked
 	}
 	return backend.DecryptGlobal(payload)
+}
+
+func (a *App) Call_CheckUpdate() UpdateInfo {
+	a.updateMu.Lock()
+	if a.updateCache != nil {
+		cache := *a.updateCache
+		a.updateMu.Unlock()
+		return cache
+	}
+	a.updateMu.Unlock()
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/elberav/gestmanagerbunker/releases/latest", nil)
+	if err != nil {
+		return UpdateInfo{}
+	}
+	req.Header.Set("User-Agent", "GestorCuentas/"+AppVersion)
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return UpdateInfo{}
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return UpdateInfo{}
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	var ghResp struct {
+		TagName string `json:"tag_name"`
+		HTMLURL string `json:"html_url"`
+	}
+	if json.Unmarshal(body, &ghResp) != nil || ghResp.TagName == "" {
+		return UpdateInfo{}
+	}
+
+	info := UpdateInfo{
+		HasUpdate:     compareSemver(ghResp.TagName, AppVersion) > 0,
+		LatestVersion: ghResp.TagName,
+		DownloadURL:   ghResp.HTMLURL,
+	}
+
+	a.updateMu.Lock()
+	a.updateCache = &info
+	a.updateMu.Unlock()
+
+	return info
+}
+
+// compareSemver returns 1 if a > b, -1 if a < b, 0 if equal
+func compareSemver(a, b string) int {
+	va := parseVersion(a)
+	vb := parseVersion(b)
+	for i := 0; i < 3; i++ {
+		if va[i] < vb[i] {
+			return -1
+		}
+		if va[i] > vb[i] {
+			return 1
+		}
+	}
+	return 0
+}
+
+func parseVersion(v string) [3]int {
+	v = strings.TrimPrefix(v, "v")
+	parts := strings.SplitN(v, ".", 3)
+	var res [3]int
+	for i := 0; i < 3 && i < len(parts); i++ {
+		n, _ := strconv.Atoi(parts[i])
+		res[i] = n
+	}
+	return res
 }
 
 func (a *App) Call_ExportAccounts() string {

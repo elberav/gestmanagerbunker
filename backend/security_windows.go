@@ -3,7 +3,6 @@
 package backend
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -190,8 +189,4 @@ func HideFile(path string) {
 	syscall.SetFileAttributes(ptr, 0x02)
 }
 
-func init() {
-	if os.Getenv("GESTORCUENTAS_SKIP_ANTIDEBUG") == "" {
-		hideFromDebugger()
-	}
-}
+

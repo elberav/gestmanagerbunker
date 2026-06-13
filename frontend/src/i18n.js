@@ -122,6 +122,8 @@ export const translations = {
     btnChangePassword: "Cambiar Contraseña",
     btnExport: "Exportar",
     exportSuccess: "Cuentas exportadas correctamente",
+    updateAvailable: "Nueva versión {version} disponible",
+    btnDownload: "Descargar",
   },
   en: {
     appTitle: "Account Registry Pro",
@@ -244,6 +246,8 @@ export const translations = {
     btnChangePassword: "Change Password",
     btnExport: "Export",
     exportSuccess: "Accounts exported successfully",
+    updateAvailable: "New version {version} available",
+    btnDownload: "Download",
   }
 };
 
