@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword } from '../wailsjs/go/main/App.js';
+  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts } from '../wailsjs/go/main/App.js';
   import AccountNode from './AccountNode.svelte';
   import LoginOverlay from './LoginOverlay.svelte';
   import AccountForm from './AccountForm.svelte';
@@ -32,8 +32,19 @@
   let cpLoading = false;
   let cpCodeCopied = false;
 
+  let exportToast = "";
   let inactivityTimer;
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutos en milisegundos
+
+  async function handleExport() {
+    const result = await Call_ExportAccounts();
+    if (result === "SUCCESS") {
+      exportToast = "✓ " + $t('exportSuccess');
+    } else if (result !== "") {
+      exportToast = "✗ " + result;
+    }
+    setTimeout(() => exportToast = '', 3000);
+  }
 
   function quickGenerate() {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*_-+=?';
@@ -223,6 +234,9 @@
           {#if quickToast}
             <span class="quick-toast">✓ {quickToast}</span>
           {/if}
+          {#if exportToast}
+            <span class="export-toast">{exportToast}</span>
+          {/if}
         </div>
         <div class="filters">
           <select bind:value={filterProvider} class="filter-select">
@@ -245,6 +259,10 @@
       <div class="right-toolbar">
         <span class="count-badge">{accounts.length} {$t('countRecords')}</span>
         {#if currentTab === 'active'}
+          <button class="btn-export" on:click={handleExport} title={$t('btnExport')}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            {$t('btnExport')}
+          </button>
           <button class="btn-add" on:click={() => showAddForm = true}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             {$t('btnNewAccount')}
@@ -506,6 +524,48 @@
     background: linear-gradient(135deg, #16a34a, #15803d);
     box-shadow: 0 4px 12px rgba(34,197,94,0.4);
     transform: translateY(-1px);
+  }
+
+  .btn-export { 
+    background: transparent; 
+    color: #94a3b8; 
+    border: 1px solid #334155; 
+    padding: 8px 14px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600;
+    font-size: 13px;
+    display: flex; 
+    align-items: center; 
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-export:hover { 
+    border-color: #3b82f6; 
+    color: #e2e8f0; 
+    background: rgba(59,130,246,0.1);
+  }
+
+  .export-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    border: 1px solid #334155;
+    z-index: 1000;
+    animation: toastIn 0.25s ease-out;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .card-list { display: flex; flex-direction: column; gap: 0; }

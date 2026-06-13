@@ -18,6 +18,8 @@ export function Call_DeleteSecureFile(arg1:number):Promise<void>;
 
 export function Call_DownloadFile(arg1:number):Promise<Array<string>>;
 
+export function Call_ExportAccounts():Promise<string>;
+
 export function Call_GetAccountByID(arg1:number):Promise<backend.Account>;
 
 export function Call_GetAccounts(arg1:string,arg2:any):Promise<Array<backend.Account>>;

@@ -34,6 +34,10 @@ export function Call_DownloadFile(arg1) {
   return window['go']['main']['App']['Call_DownloadFile'](arg1);
 }
 
+export function Call_ExportAccounts() {
+  return window['go']['main']['App']['Call_ExportAccounts']();
+}
+
 export function Call_GetAccountByID(arg1) {
   return window['go']['main']['App']['Call_GetAccountByID'](arg1);
 }

@@ -120,6 +120,8 @@ export const translations = {
     changePasswordSuccess: "¡Contraseña cambiada exitosamente!",
     wrongCurrentPassword: "La contraseña actual es incorrecta.",
     btnChangePassword: "Cambiar Contraseña",
+    btnExport: "Exportar",
+    exportSuccess: "Cuentas exportadas correctamente",
   },
   en: {
     appTitle: "Account Registry Pro",
@@ -240,6 +242,8 @@ export const translations = {
     changePasswordSuccess: "Password changed successfully!",
     wrongCurrentPassword: "Current password is incorrect.",
     btnChangePassword: "Change Password",
+    btnExport: "Export",
+    exportSuccess: "Accounts exported successfully",
   }
 };
 

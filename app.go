@@ -4,7 +4,9 @@ import (
 	"GestorCuentas/backend"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -295,4 +297,95 @@ func (a *App) Call_Decrypt(payload []byte) (string, error) {
 		return "", backend.ErrLocked
 	}
 	return backend.DecryptGlobal(payload)
+}
+
+func (a *App) Call_ExportAccounts() string {
+	if backend.GetMasterKey() == nil {
+		return backend.ErrLocked.Error()
+	}
+
+	roots := backend.GetAccounts("active", nil)
+	var sb strings.Builder
+
+	sb.WriteString("# Exportación de Cuentas - GestorCuentas\n")
+	sb.WriteString("# Generado: " + time.Now().Format("2006-01-02 15:04:05") + "\n\n")
+
+	for i, acc := range roots {
+		a.writeAccountMD(&sb, &acc, 2)
+		if acc.HasChildren {
+			children := backend.GetAllChildren(acc.ID)
+			for _, child := range children {
+				a.writeAccountMD(&sb, &child, 3)
+			}
+		}
+		if i < len(roots)-1 {
+			sb.WriteString("\n")
+		}
+	}
+
+	sb.WriteString("\n---\n*Exportado desde GestorCuentas*\n")
+
+	selection, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Exportar cuentas",
+		DefaultFilename: "cuentas_export.md",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Markdown (*.md)", Pattern: "*.md"},
+		},
+	})
+	if err != nil {
+		return "Error al abrir el diálogo de guardar"
+	}
+	if selection == "" {
+		return "" // Cancelado por el usuario
+	}
+
+	err = os.WriteFile(selection, []byte(sb.String()), 0644)
+	if err != nil {
+		return "Error al escribir el archivo"
+	}
+
+	return "SUCCESS"
+}
+
+func (a *App) writeAccountMD(sb *strings.Builder, acc *backend.Account, level int) {
+	heading := strings.Repeat("#", level)
+	sb.WriteString(fmt.Sprintf("%s %s\n", heading, acc.Name))
+
+	a.writeFieldMD(sb, "Email", acc.Email)
+	a.writeFieldMD(sb, "Usuario", acc.Username)
+
+	if len(acc.PasswordEnc) > 0 {
+		pw, err := backend.DecryptGlobal(acc.PasswordEnc)
+		if err == nil {
+			a.writeFieldMD(sb, "Contraseña", pw)
+		}
+	}
+
+	a.writeFieldMD(sb, "URL", acc.URL)
+	a.writeFieldMD(sb, "Tag", acc.Tag)
+	a.writeFieldMD(sb, "Método", acc.LoginMethod)
+
+	if len(acc.NotesEnc) > 0 {
+		notes, err := backend.DecryptGlobal(acc.NotesEnc)
+		if err == nil {
+			a.writeFieldMD(sb, "Notas", notes)
+		}
+	}
+
+	sb.WriteString("\n")
+}
+
+func (a *App) writeFieldMD(sb *strings.Builder, key, value string) {
+	if value == "" {
+		return
+	}
+	lines := strings.Split(value, "\n")
+	if len(lines) <= 1 {
+		sb.WriteString(fmt.Sprintf("- **%s**: %s\n", key, value))
+	} else {
+		sb.WriteString(fmt.Sprintf("- **%s**:\n", key))
+		for _, line := range lines {
+			sb.WriteString(fmt.Sprintf("  %s\n", line))
+		}
+	}
 }
