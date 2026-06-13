@@ -1,0 +1,22 @@
+DOCS
+build/bin
+node_modules
+frontend/dist
+webkit2gtk-4.0.pc
+webkit2gtk-4.1.pc
+.crp_mdphyRRS_t1144_t2211_t44_32_88_t00
+.secrets
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor swap / user files
+*.swp
+*.suo
+*.user
+
+# IDE config
+.vscode/
+.idea/
