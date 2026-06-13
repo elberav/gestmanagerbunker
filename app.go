@@ -432,10 +432,10 @@ func (a *App) Call_DownloadUpdate(url string) string {
 		return "No se pudo determinar la ruta del ejecutable"
 	}
 	exeDir := filepath.Dir(exePath)
-	newPath := filepath.Join(exeDir, "GestorCuentas_new")
-	if goruntime.GOOS == "windows" {
-		newPath += ".exe"
-	}
+	exeName := filepath.Base(exePath)
+	ext := filepath.Ext(exeName)
+	baseName := strings.TrimSuffix(exeName, ext)
+	newPath := filepath.Join(exeDir, baseName+"_new"+ext)
 
 	client := &http.Client{Timeout: 5 * time.Minute}
 	resp, err := client.Get(url)
@@ -465,6 +465,10 @@ func (a *App) Call_DownloadUpdate(url string) string {
 		return "Archivo demasiado pequeno, posible error de descarga"
 	}
 
+	if goruntime.GOOS != "windows" {
+		os.Chmod(newPath, 0755)
+	}
+
 	return "SUCCESS"
 }
 
@@ -474,11 +478,13 @@ func (a *App) Call_ApplyUpdate() string {
 		return "No se pudo determinar la ruta del ejecutable"
 	}
 	exeDir := filepath.Dir(exePath)
-	newPath := filepath.Join(exeDir, "GestorCuentas_new")
+	exeName := filepath.Base(exePath)
+	ext := filepath.Ext(exeName)
+	baseName := strings.TrimSuffix(exeName, ext)
+	newPath := filepath.Join(exeDir, baseName+"_new"+ext)
 	origPath := exePath
 
 	if goruntime.GOOS == "windows" {
-		newPath += ".exe"
 		batPath := filepath.Join(exeDir, "update.bat")
 		batContent := fmt.Sprintf(
 			"@echo off\r\n"+
