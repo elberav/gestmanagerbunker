@@ -56,6 +56,11 @@
     <div class="methods">
       <div class="method">
         <h4>PayPal</h4>
+        {#if config.paypal.img_base64}
+          <img src="data:image/png;base64,{config.paypal.img_base64}" alt="PayPal" class="paypal-img" />
+        {:else}
+          <div class="paypal-img-placeholder"></div>
+        {/if}
         <button class="paypal-btn" on:click={() => openPaypal(config.paypal.link)}>
           {$t('donationPaypalBtn')}
         </button>
@@ -135,7 +140,7 @@
   .method h4 {
     margin: 0 0 10px 0;
     color: #eee;
-    font-size: 1em;
+    font-size: 1.3em;
   }
   .qr {
     width: 230px;
@@ -144,6 +149,22 @@
     background: white;
     border-radius: 6px;
     margin-bottom: 8px;
+  }
+  .paypal-img {
+    width: 230px;
+    height: 230px;
+    object-fit: contain;
+    margin: 0 auto 1px auto;
+    margin-top: -20px;
+    display: block;
+  }
+  .paypal-img-placeholder {
+    width: 230px;
+    height: 230px;
+    background: rgba(255,255,255,0.05);
+    border: 1px dashed #555;
+    border-radius: 6px;
+    margin: 0 auto 10px auto;
   }
   .paypal-btn {
     background: #0070ba;
