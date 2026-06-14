@@ -20,7 +20,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-const AppVersion = "v1.0.0"
+const AppVersion = "v1.2.0"
 
 type UpdateInfo struct {
 	HasUpdate     bool   `json:"has_update"`
