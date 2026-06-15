@@ -21,3 +21,5 @@ desktop.ini
 # IDE config
 .vscode/
 .idea/
+wailsjs/.env
+.env

@@ -37,6 +37,8 @@ export function Call_GetAllChildren(arg1:number):Promise<Array<backend.Account>>
 
 export function Call_GetAllFiles():Promise<Array<backend.SecureFile>>;
 
+export function Call_GetAppVersion():Promise<string>;
+
 export function Call_GetLockoutStatus():Promise<Array<number>>;
 
 export function Call_IsFirstRun():Promise<boolean>;

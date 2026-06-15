@@ -70,6 +70,10 @@ export function Call_GetAllFiles() {
   return window['go']['main']['App']['Call_GetAllFiles']();
 }
 
+export function Call_GetAppVersion() {
+  return window['go']['main']['App']['Call_GetAppVersion']();
+}
+
 export function Call_GetLockoutStatus() {
   return window['go']['main']['App']['Call_GetLockoutStatus']();
 }

@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts, Call_CheckUpdate, Call_DownloadUpdate, Call_ApplyUpdate } from '../wailsjs/go/main/App.js';
+  import { Call_GetAccounts, Call_SearchAccounts, Call_LockSession, Call_CopyToClipboard, Call_ChangeMasterPassword, Call_ExportAccounts, Call_CheckUpdate, Call_DownloadUpdate, Call_ApplyUpdate, Call_GetAppVersion } from '../wailsjs/go/main/App.js';
   import AccountNode from './AccountNode.svelte';
   import LoginOverlay from './LoginOverlay.svelte';
   import AccountForm from './AccountForm.svelte';
@@ -38,6 +38,8 @@
   let exportPassword = "";
   let exportError = "";
   let exportLoading = false;
+
+  let appVersion = "";
 
   let updateInfo = null;
   let updateDismissed = false;
@@ -148,6 +150,7 @@
   onMount(() => {
     initLang();
     loading = false;
+    Call_GetAppVersion().then(v => appVersion = v);
     // Iniciar el sistema de auto-bloqueo por inactividad
     startInactivityTimer();
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
@@ -283,6 +286,9 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       {$t('tabDonation')}
     </button>
+    {#if appVersion}
+      <span class="version-label">{appVersion}</span>
+    {/if}
   </div>
 
   {#if currentTab === 'vault'}
@@ -604,7 +610,7 @@
   }
   .lang-select:hover { border-color: #3b82f6; }
   
-  .tabs { display: flex; gap: 6px; margin-bottom: 22px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px;}
+  .tabs { display: flex; gap: 6px; margin-bottom: 22px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; align-items: center; }
   .tab-btn { 
     background: transparent; 
     color: #64748b; 
@@ -628,6 +634,19 @@
   .donation-tab:hover { color: #f87171 !important; background: rgba(239,68,68,0.1) !important; }
   .donation-tab.active-tab { color: #ef4444 !important; background: rgba(239,68,68,0.15) !important; }
   .donation-tab :global(svg) { animation: heartPulse 1.2s ease-in-out infinite; }
+  .version-label {
+    margin-left: auto;
+    font-size: 11px;
+    color: #475569;
+    font-weight: 600;
+    font-family: 'Consolas', monospace;
+    align-self: center;
+    padding: 2px 8px;
+    border: 1px solid #2a2d35;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    user-select: all;
+  }
   @keyframes heartPulse {
     0%, 100% { transform: scale(1); }
     20% { transform: scale(1.17); }

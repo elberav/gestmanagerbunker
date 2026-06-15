@@ -50,6 +50,10 @@ func (a *App) startup(ctx context.Context) {
 	backend.ConnectDB()
 }
 
+func (a *App) Call_GetAppVersion() string {
+	return AppVersion
+}
+
 func (a *App) shutdown(ctx context.Context) {
 	backend.Lock()
 	backend.CloseDB()

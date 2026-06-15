@@ -1,9 +1,8 @@
 <script>
-  import { onMount } from 'svelte';
-  import { t } from './i18n.js';
+  import { onMount } from "svelte";
+  import { t } from "./i18n.js";
 
-  const API_URL = "https://axmple";
-  // const API_URL = "http://localhost:8080";
+  const API_URL = import.meta.env.API_URL_COFFEESITO;
 
   let config = null;
   let loading = true;
@@ -21,14 +20,14 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       config = await res.json();
     } catch (e) {
-      error = $t('donationError') + " " + e.message;
+      error = $t("donationError") + " " + e.message;
     } finally {
       loading = false;
     }
   }
 
   function openPaypal(link) {
-    window.open(link, '_blank');
+    window.open(link, "_blank");
   }
 
   function copyNumber(num) {
@@ -38,15 +37,17 @@
 
 <div class="donation-panel">
   {#if loading}
-    <div class="loading">{$t('donationLoading')}</div>
+    <div class="loading">{$t("donationLoading")}</div>
   {:else if error}
     <div class="error">{error}</div>
-    <button class="retry-btn" on:click={loadConfig}>{$t('donationRetry')}</button>
+    <button class="retry-btn" on:click={loadConfig}
+      >{$t("donationRetry")}</button
+    >
   {:else if config}
-    <h3>{$t('donationTitle')}</h3>
+    <h3>{$t("donationTitle")}</h3>
 
     <div class="amounts">
-      <p>{$t('donationInvite')}</p>
+      <p>{$t("donationInvite")}</p>
       <div class="amount-buttons">
         {#each config.montos_sugeridos as monto}
           <span class="amount">{monto} {config.moneda}</span>
@@ -58,12 +59,19 @@
       <div class="method">
         <h4>PayPal</h4>
         {#if config.paypal.img_base64}
-          <img src="data:image/png;base64,{config.paypal.img_base64}" alt="PayPal" class="paypal-img" />
+          <img
+            src="data:image/png;base64,{config.paypal.img_base64}"
+            alt="PayPal"
+            class="paypal-img"
+          />
         {:else}
           <div class="paypal-img-placeholder"></div>
         {/if}
-        <button class="paypal-btn" on:click={() => openPaypal(config.paypal.link)}>
-          {$t('donationPaypalBtn')}
+        <button
+          class="paypal-btn"
+          on:click={() => openPaypal(config.paypal.link)}
+        >
+          {$t("donationPaypalBtn")}
         </button>
         <p class="detail">{config.paypal.email}</p>
       </div>
@@ -71,7 +79,11 @@
       <div class="method">
         <h4>Yape</h4>
         {#if config.yape.qr_base64}
-          <img src="data:image/png;base64,{config.yape.qr_base64}" alt="QR Yape" class="qr" />
+          <img
+            src="data:image/png;base64,{config.yape.qr_base64}"
+            alt="QR Yape"
+            class="qr"
+          />
         {/if}
         <!-- <p class="detail" on:click={() => copyNumber(config.yape.numero)}>
           📋 {config.yape.numero}
@@ -82,7 +94,11 @@
       <div class="method">
         <h4>Plin</h4>
         {#if config.plin.qr_base64}
-          <img src="data:image/png;base64,{config.plin.qr_base64}" alt="QR Plin" class="qr" />
+          <img
+            src="data:image/png;base64,{config.plin.qr_base64}"
+            alt="QR Plin"
+            class="qr"
+          />
         {/if}
         <!-- <p class="detail" on:click={() => copyNumber(config.plin.numero)}>
           📋 {config.plin.numero}
@@ -162,7 +178,7 @@
   .paypal-img-placeholder {
     width: 230px;
     height: 230px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px dashed #555;
     border-radius: 6px;
     margin: 0 auto 10px auto;
@@ -189,7 +205,8 @@
   .detail:hover {
     color: #4fc3f7;
   }
-  .loading, .error {
+  .loading,
+  .error {
     color: #999;
     padding: 20px;
   }
