@@ -27,8 +27,18 @@
 
   function generatePassword() {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*_-+=?';
-    const values = crypto.getRandomValues(new Uint8Array(passwordLength));
-    password = Array.from(values, v => charset[v % charset.length]).join('');
+    const maxValid = 256 - (256 % charset.length);
+    let result = '';
+    while (result.length < passwordLength) {
+      const batch = crypto.getRandomValues(new Uint8Array(passwordLength * 2));
+      for (const v of batch) {
+        if (v < maxValid) {
+          result += charset[v % charset.length];
+          if (result.length >= passwordLength) break;
+        }
+      }
+    }
+    password = result;
     showPassword = true;
   }
 

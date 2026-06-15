@@ -46,8 +46,8 @@ export function Call_DownloadUpdate(arg1) {
   return window['go']['main']['App']['Call_DownloadUpdate'](arg1);
 }
 
-export function Call_ExportAccounts() {
-  return window['go']['main']['App']['Call_ExportAccounts']();
+export function Call_ExportAccounts(arg1) {
+  return window['go']['main']['App']['Call_ExportAccounts'](arg1);
 }
 
 export function Call_GetAccountByID(arg1) {

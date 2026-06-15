@@ -96,11 +96,21 @@ func HasRecoveryConfig() bool {
 func generateRecoveryCode() string {
 	// Caracteres sin ambigüedad visual (sin O/0, I/1, L)
 	const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+	const charsetLen = len(chars) // 30
+	// Rejection sampling: descartamos bytes que causarían sesgo de módulo.
+	// 256 % 30 = 16, así que los bytes [240, 255] causan sesgo.
+	// Solo aceptamos bytes < 240 (256 - 16).
+	maxValid := byte(256 - (256 % charsetLen)) // 240
 	code := make([]byte, 28)
 	for i := range code {
-		b := make([]byte, 1)
-		rand.Read(b)
-		code[i] = chars[int(b[0])%len(chars)]
+		for {
+			b := make([]byte, 1)
+			rand.Read(b)
+			if b[0] < maxValid {
+				code[i] = chars[int(b[0])%charsetLen]
+				break
+			}
+		}
 	}
 	return string(code[0:4]) + "-" + string(code[4:8]) + "-" + string(code[8:12]) + "-" + string(code[12:16]) + "-" + string(code[16:20]) + "-" + string(code[20:24]) + "-" + string(code[24:28])
 }
@@ -486,6 +496,34 @@ func decryptData(key []byte, payload []byte) ([]byte, error) {
 	}
 
 	return plaintext, nil
+}
+
+// VerifyPassword verifica la contraseña maestra sin alterar el estado de la aplicación.
+// Se usa para re-autenticación antes de operaciones sensibles como exportar.
+func VerifyPassword(password string) bool {
+	if masterKey == nil {
+		return false
+	}
+	pwBytes := []byte(password)
+	defer func() {
+		for i := range pwBytes { pwBytes[i] = 0 }
+	}()
+
+	saltBytes, err := os.ReadFile(saltFile)
+	if err != nil {
+		return false
+	}
+	testKey := DeriveKey(string(pwBytes), saltBytes)
+	defer func() {
+		for i := range testKey { testKey[i] = 0 }
+	}()
+
+	tokenRaw, err := os.ReadFile(verifyFile)
+	if err != nil {
+		return false
+	}
+	decrypted, err := decryptData(testKey, tokenRaw)
+	return err == nil && string(decrypted) == verifyPhrase
 }
 
 // DecryptGlobal decodifica como string para compatibilidad previa

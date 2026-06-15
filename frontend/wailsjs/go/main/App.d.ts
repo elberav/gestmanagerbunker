@@ -25,7 +25,7 @@ export function Call_DownloadFile(arg1:number):Promise<Array<string>>;
 
 export function Call_DownloadUpdate(arg1:string):Promise<string>;
 
-export function Call_ExportAccounts():Promise<string>;
+export function Call_ExportAccounts(arg1:string):Promise<string>;
 
 export function Call_GetAccountByID(arg1:number):Promise<backend.Account>;
 

@@ -34,10 +34,16 @@
   let cpCodeCopied = false;
 
   let exportToast = "";
+  let showExportModal = false;
+  let exportPassword = "";
+  let exportError = "";
+  let exportLoading = false;
+
   let updateInfo = null;
   let updateDismissed = false;
-  let updateState = ""; // "", "downloading", "applying", "error"
+  let updateState = ""; // "", "downloading", "confirmHash", "applying", "error"
   let updateError = "";
+  let updateHash = "";
   let inactivityTimer;
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutos en milisegundos
 
@@ -47,19 +53,24 @@
     updateError = "";
     try {
       const dlResult = await Call_DownloadUpdate(updateInfo.download_url);
-      if (dlResult !== "SUCCESS") {
+      if (dlResult.startsWith("SHA256:")) {
+        updateHash = dlResult.replace("SHA256:", "");
+        updateState = "confirmHash";
+      } else {
         updateState = "error";
         updateError = dlResult;
-        return;
       }
-      updateState = "applying";
-      setTimeout(() => {
-        Call_ApplyUpdate();
-      }, 500);
     } catch (e) {
       updateState = "error";
       updateError = e.toString();
     }
+  }
+
+  async function handleHashConfirm() {
+    updateState = "applying";
+    setTimeout(() => {
+      Call_ApplyUpdate();
+    }, 500);
   }
 
   async function checkForUpdate() {
@@ -74,19 +85,49 @@
   }
 
   async function handleExport() {
-    const result = await Call_ExportAccounts();
-    if (result === "SUCCESS") {
-      exportToast = "✓ " + $t('exportSuccess');
-    } else if (result !== "") {
-      exportToast = "✗ " + result;
+    exportPassword = "";
+    exportError = "";
+    showExportModal = true;
+  }
+
+  async function handleExportConfirm() {
+    if (!exportPassword) {
+      exportError = $t('emptyPasswordError');
+      return;
     }
-    setTimeout(() => exportToast = '', 3000);
+    exportLoading = true;
+    exportError = "";
+    try {
+      const result = await Call_ExportAccounts(exportPassword);
+      if (result === "SUCCESS") {
+        showExportModal = false;
+        exportToast = "✓ " + $t('exportSuccess');
+        setTimeout(() => exportToast = '', 3000);
+      } else if (result === "CONTRASEÑA_INCORRECTA") {
+        exportError = $t('wrongPassword');
+      } else if (result !== "") {
+        exportError = result;
+      }
+    } catch (e) {
+      exportError = e.toString();
+    }
+    exportLoading = false;
   }
 
   function quickGenerate() {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*_-+=?';
-    const values = crypto.getRandomValues(new Uint8Array(quickLen));
-    quickPw = Array.from(values, v => charset[v % charset.length]).join('');
+    const maxValid = 256 - (256 % charset.length);
+    let result = '';
+    while (result.length < quickLen) {
+      const batch = crypto.getRandomValues(new Uint8Array(quickLen * 2));
+      for (const v of batch) {
+        if (v < maxValid) {
+          result += charset[v % charset.length];
+          if (result.length >= quickLen) break;
+        }
+      }
+    }
+    quickPw = result;
     Call_CopyToClipboard(quickPw);
     quickToast = $t('passwordCopied');
     setTimeout(() => quickToast = '', 2000);
@@ -462,6 +503,54 @@
           </div>
         </form>
       {/if}
+    </div>
+  </div>
+{/if}
+
+{#if showExportModal}
+  <div class="cp-overlay">
+    <div class="cp-modal">
+      <div class="cp-header-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <h2 class="cp-title">{$t('exportAuthTitle')}</h2>
+      <p class="cp-subtitle">{$t('exportAuthSubtitle')}</p>
+
+      {#if exportError}
+        <div class="cp-error">{exportError}</div>
+      {/if}
+
+      <form on:submit|preventDefault={handleExportConfirm}>
+        <div class="cp-input-wrap">
+          <svg class="cp-input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" bind:value={exportPassword} placeholder={$t('currentPasswordPlaceholder')} autocomplete="off" />
+        </div>
+        <div class="cp-actions">
+          <button type="button" class="cp-btn-cancel" on:click={() => showExportModal = false}>{$t('btnCancel')}</button>
+          <button type="submit" class="cp-btn-submit" disabled={exportLoading || !exportPassword}>
+            {exportLoading ? '...' : $t('btnExport')}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
+{#if updateState === "confirmHash"}
+  <div class="cp-overlay">
+    <div class="cp-modal">
+      <div class="cp-header-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h2 class="cp-title">{$t('verifyUpdateHash')}</h2>
+      <p class="cp-subtitle">{$t('verifyUpdateHashSubtitle')}</p>
+      <div class="cp-code-display">
+        <span class="cp-code-value" style="font-size: 12px; letter-spacing: 0.5px;">{updateHash}</span>
+      </div>
+      <div class="cp-actions">
+        <button type="button" class="cp-btn-cancel" on:click={() => { updateState = ''; updateHash = ''; }}>{$t('btnCancel')}</button>
+        <button type="button" class="cp-btn-submit" on:click={handleHashConfirm}>{$t('btnConfirmYes')}</button>
+      </div>
     </div>
   </div>
 {/if}

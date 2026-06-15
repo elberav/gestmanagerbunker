@@ -129,10 +129,14 @@ export const translations = {
     btnChangePassword: "Cambiar Contraseña",
     btnExport: "Exportar",
     exportSuccess: "Cuentas exportadas correctamente",
+    exportAuthTitle: "Re-autenticación Requerida",
+    exportAuthSubtitle: "Ingresa tu contraseña maestra para confirmar la exportación.",
     updateAvailable: "Nueva versión {version} disponible",
     btnUpdateNow: "Actualizar",
     updateDownloading: "Descargando nueva versión...",
     updateApplying: "Instalando y reiniciando...",
+    verifyUpdateHash: "Verificar Integridad del Update",
+    verifyUpdateHashSubtitle: "Compara este hash SHA256 con el publicado en GitHub Releases antes de instalar.",
   },
   en: {
     appTitle: "Account Registry Pro",
@@ -262,10 +266,14 @@ export const translations = {
     btnChangePassword: "Change Password",
     btnExport: "Export",
     exportSuccess: "Accounts exported successfully",
+    exportAuthTitle: "Re-authentication Required",
+    exportAuthSubtitle: "Enter your master password to confirm the export.",
     updateAvailable: "New version {version} available",
     btnUpdateNow: "Update",
     updateDownloading: "Downloading new version...",
     updateApplying: "Installing and restarting...",
+    verifyUpdateHash: "Verify Update Integrity",
+    verifyUpdateHashSubtitle: "Compare this SHA256 hash with the one published on GitHub Releases before installing.",
   }
 };
 

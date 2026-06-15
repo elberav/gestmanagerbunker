@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import { t } from './i18n.js';
 
-  const API_URL = "http://localhost:8080";
+  const API_URL = "https://axmple";
+  // const API_URL = "http://localhost:8080";
 
   let config = null;
   let loading = true;

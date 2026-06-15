@@ -3,7 +3,9 @@ package main
 import (
 	"GestorCuentas/backend"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,7 +22,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-const AppVersion = "v1.2.0"
+const AppVersion = "v1.2.9"
 
 type UpdateInfo struct {
 	HasUpdate     bool   `json:"has_update"`
@@ -448,28 +450,38 @@ func (a *App) Call_DownloadUpdate(url string) string {
 		return "Error del servidor: " + resp.Status
 	}
 
+	// Leer todo el body en memoria para calcular hash y escribir después
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "Error al leer la descarga"
+	}
+
+	if len(data) < 1024*1024 {
+		return "Archivo demasiado pequeno, posible error de descarga"
+	}
+
+	// Calcular SHA256 del binario descargado
+	hash := sha256.Sum256(data)
+	hashHex := hex.EncodeToString(hash[:])
+
+	// Escribir a disco
 	out, err := os.Create(newPath)
 	if err != nil {
 		return "Error al crear archivo: " + err.Error()
 	}
 	defer out.Close()
 
-	written, err := io.Copy(out, resp.Body)
+	_, err = out.Write(data)
 	if err != nil {
 		os.Remove(newPath)
 		return "Error al escribir archivo: " + err.Error()
-	}
-
-	if written < 1024*1024 {
-		os.Remove(newPath)
-		return "Archivo demasiado pequeno, posible error de descarga"
 	}
 
 	if goruntime.GOOS != "windows" {
 		os.Chmod(newPath, 0755)
 	}
 
-	return "SUCCESS"
+	return "SHA256:" + hashHex
 }
 
 func (a *App) Call_ApplyUpdate() string {
@@ -522,9 +534,13 @@ func (a *App) Call_ApplyUpdate() string {
 	return ""
 }
 
-func (a *App) Call_ExportAccounts() string {
+func (a *App) Call_ExportAccounts(password string) string {
 	if backend.GetMasterKey() == nil {
 		return backend.ErrLocked.Error()
+	}
+
+	if !backend.VerifyPassword(password) {
+		return "CONTRASEÑA_INCORRECTA"
 	}
 
 	roots := backend.GetAccounts("active", nil)
