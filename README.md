@@ -22,10 +22,24 @@
 
 ### Linux
 1. Descarga `gestor-cuentas`
-2. Dale permisos de ejecución:
+2. Asegúrate de tener WebKit2GTK 4.1 instalado:
+   ```bash
+   # Debian 12+ / Ubuntu 22.04+
+   sudo apt install libwebkit2gtk-4.1-0
+
+   # Fedora 37+
+   sudo dnf install webkit2gtk4.1
+
+   # Arch
+   sudo pacman -S webkit2gtk
+
+   # openSUSE
+   sudo zypper install libwebkit2gtk-4_1-0
+   ```
+3. Dale permisos de ejecución:
    ```bash
    chmod +x ManagAccount-v1.2
-3. Ejecuta:
+4. Ejecuta:
    ```bash
    ./ManagAccount-v1.2
 
