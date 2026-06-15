@@ -123,12 +123,18 @@ func (a *App) Call_AddAccount(name, email, loginMethod string, password string, 
 
 	var passwordEnc []byte
 	if len(pwBytes) > 0 {
-		encBytes, _ := backend.EncryptData(string(pwBytes))
+		encBytes, err := backend.EncryptData(string(pwBytes))
+		if err != nil {
+			return 0, err
+		}
 		passwordEnc = encBytes
 	}
 	var notesEnc []byte
 	if len(ntBytes) > 0 {
-		encBytes, _ := backend.EncryptData(string(ntBytes))
+		encBytes, err := backend.EncryptData(string(ntBytes))
+		if err != nil {
+			return 0, err
+		}
 		notesEnc = encBytes
 	}
 	return backend.AddAccount(name, email, loginMethod, passwordEnc, parentID, tag, username, url, notesEnc)
@@ -149,12 +155,18 @@ func (a *App) Call_UpdateAccount(accountID int, name, email, loginMethod string,
 
 	var passwordEnc []byte
 	if len(pwBytes) > 0 {
-		encBytes, _ := backend.EncryptData(string(pwBytes))
+		encBytes, err := backend.EncryptData(string(pwBytes))
+		if err != nil {
+			return err
+		}
 		passwordEnc = encBytes
 	}
 	var notesEnc []byte
 	if len(ntBytes) > 0 {
-		encBytes, _ := backend.EncryptData(string(ntBytes))
+		encBytes, err := backend.EncryptData(string(ntBytes))
+		if err != nil {
+			return err
+		}
 		notesEnc = encBytes
 	}
 	return backend.UpdateAccount(accountID, name, email, loginMethod, passwordEnc, tag, username, url, notesEnc)

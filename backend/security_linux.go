@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 func isBeingDebugged() bool {
@@ -28,10 +27,6 @@ func isBeingDebugged() bool {
 				}
 			}
 		}
-	}
-
-	if err := syscall.PtraceTraceme(); err != nil {
-		return true
 	}
 
 	if hasDebuggerProcess() {
@@ -108,10 +103,6 @@ func hasSuspiciousEnv() bool {
 		}
 	}
 	return false
-}
-
-func earlyAntiDebug() {
-	syscall.PtraceTraceme()
 }
 
 func HideFile(path string) {}

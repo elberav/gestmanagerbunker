@@ -363,12 +363,30 @@ func SearchAccounts(query string, status string) []Account {
 }
 
 func AddAccount(name, email, loginMethod string, passwordEnc []byte, parentID *int, tag, username, url string, notesEnc []byte) (int, error) {
-	nE, _ := encryptData(masterKey, []byte(name))
-	eE, _ := encryptData(masterKey, []byte(email))
-	lmE, _ := encryptData(masterKey, []byte(loginMethod))
-	tE, _ := encryptData(masterKey, []byte(tag))
-	uE, _ := encryptData(masterKey, []byte(username))
-	urlE, _ := encryptData(masterKey, []byte(url))
+	nE, err := encryptData(masterKey, []byte(name))
+	if err != nil {
+		return 0, err
+	}
+	eE, err := encryptData(masterKey, []byte(email))
+	if err != nil {
+		return 0, err
+	}
+	lmE, err := encryptData(masterKey, []byte(loginMethod))
+	if err != nil {
+		return 0, err
+	}
+	tE, err := encryptData(masterKey, []byte(tag))
+	if err != nil {
+		return 0, err
+	}
+	uE, err := encryptData(masterKey, []byte(username))
+	if err != nil {
+		return 0, err
+	}
+	urlE, err := encryptData(masterKey, []byte(url))
+	if err != nil {
+		return 0, err
+	}
 
 	res, err := db.Exec(`INSERT INTO accounts (name, email, login_method, password_enc, parent_id, tag, username, url, notes_enc, name_enc, email_enc, login_method_enc, tag_enc, username_enc, url_enc) 
 		VALUES ('***','***','***',?,?, '***','***','***',?, ?,?,?,?,?,?)`,
@@ -382,14 +400,32 @@ func AddAccount(name, email, loginMethod string, passwordEnc []byte, parentID *i
 }
 
 func UpdateAccount(accountID int, name, email, loginMethod string, passwordEnc []byte, tag, username, url string, notesEnc []byte) error {
-	nE, _ := encryptData(masterKey, []byte(name))
-	eE, _ := encryptData(masterKey, []byte(email))
-	lmE, _ := encryptData(masterKey, []byte(loginMethod))
-	tE, _ := encryptData(masterKey, []byte(tag))
-	uE, _ := encryptData(masterKey, []byte(username))
-	urlE, _ := encryptData(masterKey, []byte(url))
+	nE, err := encryptData(masterKey, []byte(name))
+	if err != nil {
+		return err
+	}
+	eE, err := encryptData(masterKey, []byte(email))
+	if err != nil {
+		return err
+	}
+	lmE, err := encryptData(masterKey, []byte(loginMethod))
+	if err != nil {
+		return err
+	}
+	tE, err := encryptData(masterKey, []byte(tag))
+	if err != nil {
+		return err
+	}
+	uE, err := encryptData(masterKey, []byte(username))
+	if err != nil {
+		return err
+	}
+	urlE, err := encryptData(masterKey, []byte(url))
+	if err != nil {
+		return err
+	}
 
-	_, err := db.Exec(`UPDATE accounts SET name='***', email='***', login_method='***', password_enc=COALESCE(?,password_enc), tag='***', username='***', url='***', notes_enc=COALESCE(?,notes_enc),
+	_, err = db.Exec(`UPDATE accounts SET name='***', email='***', login_method='***', password_enc=COALESCE(?,password_enc), tag='***', username='***', url='***', notes_enc=COALESCE(?,notes_enc),
 		name_enc=?, email_enc=?, login_method_enc=?, tag_enc=?, username_enc=?, url_enc=? WHERE id=?`,
 		passwordEnc, notesEnc, nE, eE, lmE, tE, uE, urlE, accountID)
 	if err != nil {

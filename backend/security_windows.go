@@ -183,6 +183,10 @@ func hideFromDebugger() {
 	)
 }
 
+func init() {
+	hideFromDebugger()
+}
+
 // HideFile marca un archivo como oculto en Windows usando la API nativa.
 func HideFile(path string) {
 	ptr, _ := syscall.UTF16PtrFromString(path)
