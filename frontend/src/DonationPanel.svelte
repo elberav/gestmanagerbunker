@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { t } from "./i18n.js";
 
-  const API_URL = import.meta.env.API_URL_COFFEESITO;
+  const API_URL = import.meta.env.VITE_API_URL_COFFEESITO;
 
   let config = null;
   let loading = true;
@@ -73,7 +73,7 @@
         >
           {$t("donationPaypalBtn")}
         </button>
-        <p class="detail">{config.paypal.email}</p>
+        <!-- <p class="detail">{config.paypal.email}</p> -->
       </div>
 
       <div class="method">
