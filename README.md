@@ -56,4 +56,4 @@ English
 📝 Notas
 El código de recuperación NO se puede recuperar - guardalo bien
 Si olvidas tu contraseña maestra, solo el código de recuperación puede acceder a tus datos
-Los datos se guardan localmente en cuenta_service_v1.db
+Los datos se guardan localmente.
